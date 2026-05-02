@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚽ WC 2026 — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #080F1D;
+      --surface: #0F1B30;
+      --card:    #162440;
+      --border:  rgba(255,255,255,.09);
+      --green:   #00A651;
+      --green-d: #007A3D;
+      --green-l: #00C962;
+      --gold:    #FFD700;
+      --red:     #EF4444;
+      --text:    rgba(255,255,255,.9);
+      --muted:   rgba(255,255,255,.48);
+      --r:       14px;
+      --r-sm:    8px;
+      --col-y:   #FCD116;
+      --col-b:   #003087;
+      --col-r:   #CE1126;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ══ LAYOUT ══ */
+    .layout {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── LEFT: Animation stage ── */
+    .stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #020c04;
+    }
+
+    /* ── RIGHT: Auth panel ── */
+    .auth-panel {
+      width: 420px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 28px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      position: relative;
+      z-index: 10;
+      overflow-y: auto;
+    }
+
+    /* ══ FIELD ══ */
+    .grass {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(255,255,255,0.022) 0px,
+          rgba(255,255,255,0.022) 55px,
+          transparent 55px,
+          transparent 110px
+        ),
+        linear-gradient(170deg, #041808 0%, #020c04 100%);
+    }
+
+    /* Stadium spotlights from top */
+    .lights {
+      position: absolute;
+      top: -80px; left: 0; right: 0;
+      height: 60%;
+      background:
+        radial-gradient(ellipse 180px 420px at 22% 0%, rgba(255,255,200,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 180px 420px at 78% 0%, rgba(255,255,200,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 120px 300px at 50% 0%, rgba(255,255,200,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Crowd silhouette */
+    .crowd {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 42%;
+      background: linear-gradient(180deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 70%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* Crowd dots (seats) */
+    .crowd::before {
+      content: '';
+      position: absolute;
+      bottom: 10%; left: 0; right: 0;
+      height: 30%;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 3px,
+        transparent 3px, transparent 14px
+      );
+    }
+
+    /* Pitch lines */
+    .pitch-lines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .pitch-lines::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 0; bottom: 0;
+      width: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+    .pitch-lines::after {
+      content: '';
+      position: absolute;
+      left: 8%; right: 8%;
+      bottom: 90px;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .center-circle {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 170px; height: 170px;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 50%;
+    }
+    .center-dot {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* Penalty boxes */
+    .box-left {
+      position: absolute;
+      left: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 80px; height: 200px;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-left: none;
+    }
+    .box-right {
+      position: absolute;
+      right: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 80px; height: 200px;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-right: none;
+    }
+
+    /* Goals */
+    .goal-left, .goal-right {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      width: 16px; height: 88px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.04);
+    }
+    .goal-left  { left: 0; border-left: none; border-radius: 0 4px 4px 0; }
+    .goal-right { right: 0; border-right: none; border-radius: 4px 0 0 4px; }
+    .goal-left::after, .goal-right::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      background:
+        repeating-linear-gradient(0deg,  rgba(255,255,255,0.07) 0px, rgba(255,255,255,0.07) 1px, transparent 1px, transparent 9px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0px, rgba(255,255,255,0.07) 1px, transparent 1px, transparent 11px);
+    }
+
+    /* Vignette */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.72) 100%);
+      pointer-events: none;
+    }
+
+    /* ══ SCOREBOARD ══ */
+    .scoreboard {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      backdrop-filter: blur(6px);
+      white-space: nowrap;
+    }
+    .sb-team { display: flex; align-items: center; gap: 6px; }
+    .sb-flag { font-size: 1rem; }
+    .sb-score {
+      font-size: 1.3rem;
+      color: white;
+      background: rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 2px 12px;
+      letter-spacing: 4px;
+    }
+    .sb-min {
+      font-size: 10px;
+      color: var(--col-y);
+      letter-spacing: 1px;
+    }
+    .sb-live {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 10px; color: #ef4444; font-weight: 700; letter-spacing: 1.5px;
+    }
+    .sb-live::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: livePulse 1s ease-in-out infinite alternate;
+    }
+    @keyframes livePulse {
+      from { opacity: 1; }
+      to   { opacity: 0.3; }
+    }
+
+    /* ══ PLAYER ANIMATIONS ══
+       Timeline: 13s loop
+       0-3s:   Both players approach ball at center
+       3-5s:   Colombia does step-over, bursts right
+       5-8s:   Colombia dribbles toward goal
+       8-10s:  Shot + GOAL
+       10-13s: Reset
+    */
+
+    /* COLOMBIA PLAYER (#7 yellow) */
+    .player-col {
+      position: absolute;
+      bottom: 140px;
+      width: 38px; height: 96px;
+      animation: colAnim 13s ease-in-out infinite;
+    }
+    @keyframes colAnim {
+      0%   { left: 5%;  }
+      30%  { left: 42%; }   /* approaches center */
+      38%  { left: 39%; }   /* step-over feint */
+      46%  { left: 60%; }   /* burst past */
+      58%  { left: 72%; }   /* approach goal */
+      67%  { left: 75%; }   /* hold for shot */
+      72%  { left: 75%; }
+      80%  { left: 60%; }   /* celebration run back */
+      90%  { left: 10%; }   /* walk back */
+      91%  { left: 4%;  }   /* off screen */
+      100% { left: 5%;  }
+    }
+
+    /* Body running bob */
+    .col-body {
+      animation: bodyBob 0.36s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    @keyframes bodyBob {
+      from { transform: rotate(-4deg) translateY(0); }
+      to   { transform: rotate(4deg)  translateY(-3px); }
+    }
+
+    /* AWAY PLAYER (blue kit — France) */
+    .player-away {
+      position: absolute;
+      bottom: 140px;
+      width: 36px; height: 90px;
+      animation: awayAnim 13s ease-in-out infinite;
+    }
+    @keyframes awayAnim {
+      0%   { left: 88%; transform: scaleX(-1); }
+      30%  { left: 52%; transform: scaleX(-1); } /* rushes toward ball */
+      38%  { left: 50%; transform: scaleX(-1); } /* lunge (beaten) */
+      46%  { left: 50%; transform: scaleX(1);  } /* turns to chase */
+      67%  { left: 50%; transform: scaleX(1);  } /* too late, stands */
+      80%  { left: 50%; transform: scaleX(1);  }
+      91%  { left: 50%; opacity: 1; }
+      92%  { left: 88%; opacity: 0; transform: scaleX(-1); }
+      93%  { left: 88%; opacity: 1; transform: scaleX(-1); }
+      100% { left: 88%; transform: scaleX(-1); }
+    }
+
+    /* Away body bob */
+    .away-body {
+      animation: bodyBob 0.38s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+
+    /* BALL */
+    .ball {
+      position: absolute;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff 0%, #ccc 55%, #888 100%);
+      box-shadow: inset -4px -4px 8px rgba(0,0,0,.5), 0 0 14px rgba(255,255,255,.35);
+      bottom: 142px;
+      animation: ballAnim 13s ease-in-out infinite;
+    }
+    .ball::before {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: conic-gradient(
+        transparent 0deg, rgba(0,0,0,.35) 60deg,
+        transparent 120deg, rgba(0,0,0,.35) 180deg,
+        transparent 240deg, rgba(0,0,0,.35) 300deg, transparent 360deg
+      );
+      animation: ballSpin 0.45s linear infinite;
+    }
+    @keyframes ballSpin { to { transform: rotate(360deg); } }
+
+    @keyframes ballAnim {
+      0%   { left: 9%;   bottom: 142px; }
+      28%  { left: 46%;  bottom: 142px; }
+      32%  { left: 46%;  bottom: 150px; } /* ball pops up during step-over */
+      36%  { left: 46%;  bottom: 142px; }
+      44%  { left: 63%;  bottom: 142px; } /* Colombia takes it */
+      52%  { left: 75%;  bottom: 142px; }
+      56%  { left: 75%;  bottom: 150px; } /* small bounce */
+      58%  { left: 75%;  bottom: 142px; }
+      67%  { left: 74%;  bottom: 142px; } /* plant */
+      72%  { left: 98%;  bottom: 162px; } /* SHOT */
+      73%  { left: 98%;  bottom: 162px; opacity: 1; }
+      74%  { left: 8%;   bottom: 142px; opacity: 0; }
+      75%  { left: 8%;   bottom: 142px; opacity: 1; }
+      100% { left: 9%;   bottom: 142px; }
+    }
+
+    /* BALL TRAIL */
+    .ball-trail {
+      position: absolute;
+      height: 6px;
+      border-radius: 3px;
+      bottom: 148px;
+      pointer-events: none;
+      animation: trailAnim 13s ease-in-out infinite;
+    }
+    @keyframes trailAnim {
+      0%   { left: 5%;  width: 0;   opacity: 0; background: linear-gradient(90deg, transparent, rgba(252,209,22,0.5)); }
+      12%  { left: 5%;  width: 6%;  opacity: 0.5; }
+      28%  { left: 38%; width: 10%; opacity: 0.5; }
+      32%  { left: 44%; width: 0;   opacity: 0; }
+      44%  { left: 55%; width: 10%; opacity: 0.6; }
+      52%  { left: 70%; width: 0;   opacity: 0; }
+      66%  { left: 68%; width: 0;   opacity: 0; }
+      71%  { left: 72%; width: 28%; opacity: 0.9; background: linear-gradient(90deg, transparent, rgba(252,209,22,0.8)); }
+      73%  { left: 98%; width: 0;   opacity: 0; }
+      100% { left: 5%;  width: 0;   opacity: 0; }
+    }
+
+    /* GOAL FLASH */
+    .goal-flash {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at 97% 50%, rgba(252,209,22,0.4) 0%, rgba(0,166,81,0.2) 40%, transparent 70%);
+      opacity: 0;
+      animation: goalFlashAnim 13s ease-in-out infinite;
+    }
+    @keyframes goalFlashAnim {
+      0%   { opacity: 0; }
+      71%  { opacity: 0; }
+      72%  { opacity: 1; }
+      78%  { opacity: 1; }
+      84%  { opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    /* GOAL TEXT */
+    .goal-label {
+      position: absolute;
+      top: 28%;
+      left: 50%;
+      transform: translateX(-50%) scale(0.2) rotate(-8deg);
+      font-size: clamp(3rem, 6vw, 5rem);
+      font-weight: 900;
+      color: var(--col-y);
+      letter-spacing: 4px;
+      text-shadow: 0 0 40px rgba(252,209,22,0.9), 0 4px 0 rgba(0,0,0,0.5);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      animation: goalLabelAnim 13s ease-in-out infinite;
+    }
+    @keyframes goalLabelAnim {
+      0%   { opacity: 0; transform: translateX(-50%) scale(0.2) rotate(-8deg); }
+      71%  { opacity: 0; transform: translateX(-50%) scale(0.2) rotate(-8deg); }
+      73%  { opacity: 1; transform: translateX(-50%) scale(1.2) rotate(4deg); }
+      76%  { opacity: 1; transform: translateX(-50%) scale(1)   rotate(0deg); }
+      83%  { opacity: 0; transform: translateX(-50%) scale(1.4) rotate(0deg); }
+      100% { opacity: 0; }
+    }
+
+    /* SCENE FLASH (highlight cut) */
+    .scene-flash {
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      animation: sceneFlashAnim 13s ease-in-out infinite;
+    }
+    @keyframes sceneFlashAnim {
+      0%,  73%  { opacity: 0; }
+      73.5%     { opacity: 0.65; }
+      74%       { opacity: 0; }
+      90%       { opacity: 0; }
+      90.5%     { opacity: 0.25; }
+      91%       { opacity: 0; }
+      100%      { opacity: 0; }
+    }
+
+    /* WC watermark */
+    .stage-brand {
+      position: absolute;
+      bottom: 24px; right: 24px;
+      color: rgba(255,255,255,0.12);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ══ AUTH CARD ══ */
+    .auth-inner { width: 100%; max-width: 360px; }
+
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    /* Animated player in auth logo (visible on mobile, decorative on desktop) */
+    .logo-player {
+      width: 90px;
+      height: 100px;
+      margin: 0 auto 16px;
+      position: relative;
+    }
+    .logo-player svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    .lp-body {
+      transform-origin: bottom center;
+      animation: lpBob 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes lpBob {
+      from { transform: rotate(-3deg) translateY(0); }
+      to   { transform: rotate(3deg)  translateY(-3px); }
+    }
+    .lp-leg-r {
+      transform-origin: 30px 55px;
+      animation: lpKick 1.8s ease-in-out infinite;
+    }
+    @keyframes lpKick {
+      0%,  100% { transform: rotate(0deg); }
+      25%        { transform: rotate(-25deg); }
+      45%        { transform: rotate(35deg); }
+      65%        { transform: rotate(0deg); }
+    }
+    .lp-ball {
+      animation: lpBallBounce 1.8s ease-in-out infinite;
+    }
+    @keyframes lpBallBounce {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      45%      { transform: translateY(-18px) translateX(18px); }
+      65%      { transform: translateY(0) translateX(22px); }
+    }
+
+    .auth-logo h1 { font-size: 1.45rem; font-weight: 800; color: white; }
+    .auth-logo p  { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+      background: var(--card); border-radius: 10px;
+      padding: 4px; margin-bottom: 24px;
+    }
+    .tab {
+      padding: 10px; border-radius: 7px; border: none;
+      background: transparent; color: var(--muted);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all .2s;
+    }
+    .tab.on { background: var(--green); color: white; }
+
+    .fg { margin-bottom: 16px; }
+    .fg label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .6px;
+      margin-bottom: 7px;
+    }
+    .fg input {
+      width: 100%; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); padding: 12px 14px;
+      color: white; font-size: 15px; font-family: inherit; outline: none;
+      transition: border-color .2s;
+    }
+    .fg input:focus { border-color: var(--green); }
+
+    .btn-block {
+      width: 100%; padding: 14px; font-size: 15px; font-weight: 700;
+      border: none; border-radius: var(--r-sm); cursor: pointer;
+      font-family: inherit; transition: all .25s;
+      background: var(--green); color: white;
+      box-shadow: 0 8px 24px rgba(0,166,81,.35);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-block:hover { background: var(--green-l); transform: translateY(-1px); }
+
+    .err { color: var(--red); font-size: 13px; text-align: center; margin-top: 12px; min-height: 18px; }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0;
+      color: var(--muted); font-size: 12px;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Colombia stripe */
+    .col-stripe {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--col-y) 33.3%, var(--col-b) 33.3% 66.6%, var(--col-r) 66.6%);
+    }
+
+    /* ══ RESPONSIVE ══ */
+    @media (max-width: 768px) {
+      body { overflow-y: auto; }
+      .layout { flex-direction: column; height: auto; min-height: 100vh; }
+      .stage {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+      }
+      .auth-panel {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        min-height: 100vh;
+        background: rgba(8,15,29,0.82);
+        backdrop-filter: blur(18px);
+        border-left: none;
+        padding: 48px 24px 40px;
+        align-items: flex-start;
+        padding-top: 60px;
+      }
+      .auth-inner { max-width: 100%; }
+      /* Make logo player more prominent on mobile */
+      .logo-player { width: 110px; height: 120px; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ══ LEFT: ANIMATED STADIUM FIELD ══ -->
+  <div class="stage">
+    <div class="grass"></div>
+    <div class="lights"></div>
+    <div class="crowd"></div>
+    <div class="pitch-lines"></div>
+    <div class="center-circle"></div>
+    <div class="center-dot"></div>
+    <div class="box-left"></div>
+    <div class="box-right"></div>
+    <div class="goal-left"></div>
+    <div class="goal-right"></div>
+
+    <!-- Scoreboard -->
+    <div class="scoreboard">
+      <div class="sb-team"><span class="sb-flag">🇨🇴</span> COL</div>
+      <div class="sb-score">1 - 0</div>
+      <div class="sb-team">FRA <span class="sb-flag">🇫🇷</span></div>
+      <div class="sb-min">72'</div>
+      <div class="sb-live">LIVE</div>
+    </div>
+
+    <!-- Ball trail -->
+    <div class="ball-trail"></div>
+
+    <!-- AWAY player (France blue) -->
+    <div class="player-away">
+      <svg viewBox="0 0 36 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g class="away-body">
+          <!-- Head -->
+          <circle cx="18" cy="9" r="7.5" fill="#e8d5b0" stroke="#c9b89a" stroke-width="1"/>
+          <!-- Jersey (France blue) -->
+          <path d="M12 17 Q10 22 11 34 L25 34 Q26 22 24 17 Z" fill="#1a3c8c"/>
+          <!-- White collar -->
+          <path d="M14 17 Q18 21 22 17" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <!-- Arms -->
+          <path d="M12 19 Q5 27 8 33" stroke="#1a3c8c" stroke-width="4" stroke-linecap="round"/>
+          <path d="M24 19 Q31 27 28 33" stroke="#1a3c8c" stroke-width="4" stroke-linecap="round"/>
+          <!-- White shorts -->
+          <rect x="11" y="34" width="6" height="12" rx="2" fill="#fff"/>
+          <rect x="19" y="34" width="6" height="12" rx="2" fill="#fff"/>
+          <!-- Legs -->
+          <path d="M14 46 Q12 60 13 70" stroke="#e8d5b0" stroke-width="5" stroke-linecap="round"/>
+          <path d="M22 46 Q24 58 23 68" stroke="#e8d5b0" stroke-width="5" stroke-linecap="round"/>
+          <!-- Boots (black) -->
+          <ellipse cx="13" cy="71" rx="5.5" ry="3" fill="#111"/>
+          <ellipse cx="23" cy="69" rx="5.5" ry="3" fill="#111"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- COLOMBIA player (#7 yellow) -->
+    <div class="player-col">
+      <svg viewBox="0 0 38 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g class="col-body">
+          <!-- Head -->
+          <circle cx="19" cy="9" r="8" fill="#e8c97a" stroke="#d4b560" stroke-width="1.5"/>
+          <!-- Hair (dark curly) -->
+          <path d="M11 7 Q13 0 19 1 Q25 0 27 7 Q22 3 19 4 Q16 3 11 7Z" fill="#1a0800"/>
+          <!-- Jersey Colombia yellow -->
+          <path d="M12 18 Q9 24 10 38 L28 38 Q29 24 26 18 Z" fill="#FCD116"/>
+          <!-- Red diagonal stripe on jersey -->
+          <path d="M13 20 L20 36" stroke="#CE1126" stroke-width="3" opacity="0.7"/>
+          <!-- Number 7 -->
+          <text x="22" y="33" text-anchor="middle" font-size="8" font-weight="900" fill="#003087">7</text>
+          <!-- Arms -->
+          <path d="M12 20 Q4 29 7 36" stroke="#FCD116" stroke-width="5" stroke-linecap="round"/>
+          <path d="M26 20 Q34 27 31 35" stroke="#FCD116" stroke-width="5" stroke-linecap="round"/>
+          <!-- Blue shorts -->
+          <rect x="11" y="38" width="7" height="13" rx="2" fill="#003087"/>
+          <rect x="20" y="38" width="7" height="13" rx="2" fill="#003087"/>
+          <!-- Left leg planted -->
+          <path d="M14 51 Q11 66 13 78" stroke="#e8c97a" stroke-width="6" stroke-linecap="round"/>
+          <!-- Right leg kicking -->
+          <path d="M23 51 Q28 63 30 72" stroke="#e8c97a" stroke-width="6" stroke-linecap="round"/>
+          <!-- Red boots -->
+          <ellipse cx="13" cy="79" rx="6" ry="3.5" fill="#CE1126"/>
+          <ellipse cx="30" cy="73" rx="6" ry="3.5" fill="#CE1126"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Ball -->
+    <div class="ball"></div>
+
+    <!-- Goal flash -->
+    <div class="goal-flash"></div>
+
+    <!-- GOOOL! text -->
+    <div class="goal-label">⚽ GOOOL!</div>
+
+    <!-- Scene transition flash -->
+    <div class="scene-flash"></div>
+
+    <!-- Vignette -->
+    <div class="vignette"></div>
+
+    <div class="stage-brand">⚽ WC 2026</div>
+  </div>
+
+  <!-- ══ RIGHT: AUTH PANEL ══ -->
+  <div class="auth-panel">
+    <div class="col-stripe"></div>
+    <div class="auth-inner">
+
+      <!-- Logo with animated player -->
+      <div class="auth-logo">
+        <div class="logo-player">
+          <svg viewBox="0 0 90 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ball (animated separately) -->
+            <g class="lp-ball">
+              <circle cx="62" cy="105" r="10" fill="white" stroke="#ddd" stroke-width="1"/>
+              <path d="M56 101 L62 96 L68 101 L66 108 L58 108Z" fill="#222" opacity="0.5"/>
+            </g>
+
+            <!-- Player (Colombia yellow) -->
+            <g class="lp-body">
+              <!-- Head -->
+              <circle cx="32" cy="12" r="10" fill="#e8c97a" stroke="#d4b560" stroke-width="1.5"/>
+              <!-- Hair -->
+              <path d="M22 10 Q24 2 32 3 Q40 2 42 10 Q37 5 32 6 Q27 5 22 10Z" fill="#1a0800"/>
+              <!-- Jersey -->
+              <path d="M22 24 Q18 32 19 50 L45 50 Q46 32 42 24 Z" fill="#FCD116"/>
+              <!-- Red stripe -->
+              <path d="M23 27 L32 48" stroke="#CE1126" stroke-width="4" opacity="0.6"/>
+              <!-- Number -->
+              <text x="38" y="46" text-anchor="middle" font-size="11" font-weight="900" fill="#003087">7</text>
+              <!-- Arms -->
+              <path d="M22 28 Q10 40 15 50" stroke="#FCD116" stroke-width="7" stroke-linecap="round"/>
+              <path d="M42 28 Q54 38 50 48" stroke="#FCD116" stroke-width="7" stroke-linecap="round"/>
+              <!-- Shorts -->
+              <rect x="19" y="50" width="10" height="17" rx="3" fill="#003087"/>
+              <rect x="33" y="50" width="10" height="17" rx="3" fill="#003087"/>
+              <!-- Left leg (planted) -->
+              <path d="M22 67 Q18 84 20 96" stroke="#e8c97a" stroke-width="8" stroke-linecap="round"/>
+              <!-- Right leg (kicking) -->
+              <g class="lp-leg-r">
+                <path d="M38 67 Q46 80 52 90" stroke="#e8c97a" stroke-width="8" stroke-linecap="round"/>
+                <ellipse cx="52" cy="91" rx="9" ry="5" fill="#CE1126"/>
+              </g>
+              <!-- Left boot -->
+              <ellipse cx="20" cy="97" rx="9" ry="5" fill="#CE1126"/>
+            </g>
+          </svg>
+        </div>
+        <h1>World Cup 2026</h1>
+        <p>Family Picks · USA · Canada · Mexico</p>
+      </div>
+
+      <!-- Login / Register tabs -->
+      <div class="tabs">
+        <button class="tab on" id="tab-login" onclick="showTab('login')">Sign In</button>
+        <button class="tab"   id="tab-reg"   onclick="showTab('reg')">Register</button>
+      </div>
+
+      <!-- Sign In -->
+      <div class="form-section active" id="f-login">
+        <div class="fg">
+          <label>Email</label>
+          <input type="email" placeholder="you@email.com" />
+        </div>
+        <div class="fg">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+        <button class="btn-block">Sign In ⚽</button>
+        <div class="err"></div>
+      </div>
+
+      <!-- Register -->
+      <div class="form-section" id="f-reg">
+        <div class="fg">
+          <label>Your Name</label>
+          <input type="text" placeholder="e.g. Diego Costa" />
+        </div>
+        <div class="fg">
+          <label>Email</label>
+          <input type="email" placeholder="you@email.com" />
+        </div>
+        <div class="fg">
+          <label>Password</label>
+          <input type="password" placeholder="Min 6 characters" />
+        </div>
+        <button class="btn-block">Create Account 🚀</button>
+        <div class="err"></div>
+        <div class="divider">Registration requires admin approval</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showTab(t) {
+    document.getElementById('f-login').classList.toggle('active', t === 'login');
+    document.getElementById('f-reg').classList.toggle('active',   t === 'reg');
+    document.getElementById('tab-login').classList.toggle('on',   t === 'login');
+    document.getElementById('tab-reg').classList.toggle('on',     t === 'reg');
+  }
+</script>
+</body>
+</html>
