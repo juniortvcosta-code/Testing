@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚽ WC 2026 — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #080F1D;
+      --surface: #0F1B30;
+      --card:    #162440;
+      --border:  rgba(255,255,255,.09);
+      --green:   #00A651;
+      --green-d: #007A3D;
+      --green-l: #00C962;
+      --gold:    #FFD700;
+      --red:     #EF4444;
+      --text:    rgba(255,255,255,.9);
+      --muted:   rgba(255,255,255,.48);
+      --r:       14px;
+      --r-sm:    8px;
+      /* Colombia */
+      --col-y: #FCD116;
+      --col-b: #003087;
+      --col-r: #CE1126;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ══ LAYOUT ══════════════════════════════════════════ */
+    .layout {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── LEFT: Animation stage ── */
+    .stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #030d05;
+    }
+
+    /* ── RIGHT: Auth panel ── */
+    .auth-panel {
+      width: 420px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 28px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      position: relative;
+      z-index: 10;
+      overflow-y: auto;
+    }
+
+    /* ══ FIELD / STAGE ELEMENTS ══════════════════════════ */
+
+    /* Grass stripes */
+    .grass {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(255,255,255,0.025) 0px,
+          rgba(255,255,255,0.025) 55px,
+          transparent 55px,
+          transparent 110px
+        ),
+        linear-gradient(170deg, #041a06 0%, #030d05 100%);
+    }
+
+    /* Stadium spotlights */
+    .lights {
+      position: absolute;
+      top: -60px; left: 0; right: 0;
+      height: 500px;
+      background:
+        radial-gradient(ellipse 200px 400px at 25% 0%, rgba(255,255,180,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 200px 400px at 75% 0%, rgba(255,255,180,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Pitch lines */
+    .pitch-lines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    /* Center line */
+    .pitch-lines::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 0; bottom: 0;
+      width: 1px;
+      background: rgba(255,255,255,0.09);
+    }
+    /* Bottom boundary */
+    .pitch-lines::after {
+      content: '';
+      position: absolute;
+      left: 10%; right: 10%;
+      bottom: 100px;
+      height: 1px;
+      background: rgba(255,255,255,0.09);
+    }
+
+    /* Center circle */
+    .center-circle {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px; height: 160px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+
+    /* Penalty arc (right side, mimics goal area) */
+    .penalty-arc {
+      position: absolute;
+      right: -60px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 120px; height: 200px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+
+    /* Goal posts (right side) */
+    .goal {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px; height: 100px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-right: none;
+      border-radius: 2px 0 0 2px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    /* Net lines on goal */
+    .goal::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 10px
+      ),
+      repeating-linear-gradient(
+        90deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 12px
+      );
+    }
+
+    /* ══ PLAYER ANIMATIONS ═══════════════════════════════ */
+
+    /* ── Scene wrapper — all animations share 11s timeline ── */
+
+    /* BALL */
+    .ball {
+      position: absolute;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff 0%, #ccc 55%, #888 100%);
+      box-shadow: inset -4px -4px 8px rgba(0,0,0,.5), 0 0 14px rgba(255,255,255,.4);
+      bottom: 180px;
+      animation: ballAnim 11s ease-in-out infinite;
+    }
+
+    /* Pentagon pattern on ball */
+    .ball::before {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: conic-gradient(
+        transparent 0deg, rgba(0,0,0,.35) 60deg,
+        transparent 120deg, rgba(0,0,0,.35) 180deg,
+        transparent 240deg, rgba(0,0,0,.35) 300deg, transparent 360deg
+      );
+      animation: ballSpin 0.45s linear infinite;
+    }
+    @keyframes ballSpin { to { transform: rotate(360deg); } }
+
+    @keyframes ballAnim {
+      /* approach from left */
+      0%   { left: -30px;  bottom: 178px; }
+      18%  { left: 28%;    bottom: 178px; }
+      /* step-over feint: ball stays while player feints */
+      22%  { left: 28%;    bottom: 178px; }
+      /* ball darts right after step-over */
+      30%  { left: 45%;    bottom: 182px; }
+      /* continue dribble */
+      40%  { left: 58%;    bottom: 178px; }
+      /* small body-fake bounce */
+      44%  { left: 58%;    bottom: 192px; }
+      46%  { left: 60%;    bottom: 178px; }
+      /* wind-up, plant */
+      54%  { left: 70%;    bottom: 180px; }
+      /* SHOT — ball rockets toward goal */
+      62%  { left: 97%;    bottom: 200px; }
+      /* in the net */
+      63%  { left: 97%;    bottom: 200px; opacity: 1; }
+      /* reset off-screen left */
+      64%  { left: -30px;  bottom: 178px; opacity: 0; }
+      65%  { left: -30px;  bottom: 178px; opacity: 1; }
+      100% { left: -30px;  bottom: 178px; }
+    }
+
+    /* BALL TRAIL */
+    .ball-trail {
+      position: absolute;
+      height: 6px;
+      border-radius: 3px;
+      bottom: 183px;
+      background: linear-gradient(90deg, transparent, rgba(252,209,22,0.6));
+      pointer-events: none;
+      animation: trailAnim 11s ease-in-out infinite;
+    }
+    @keyframes trailAnim {
+      0%   { left: -30px; width: 0;   opacity: 0; }
+      10%  { left: 5%;    width: 8%;  opacity: 0.5; }
+      18%  { left: 22%;   width: 8%;  opacity: 0.5; }
+      22%  { left: 26%;   width: 0;   opacity: 0; }
+      30%  { left: 38%;   width: 0;   opacity: 0; }
+      38%  { left: 44%;   width: 16%; opacity: 0.7; }
+      46%  { left: 56%;   width: 0;   opacity: 0; }
+      54%  { left: 63%;   width: 0;   opacity: 0; }
+      60%  { left: 68%;   width: 30%; opacity: 0.9; }
+      62%  { left: 95%;   width: 0;   opacity: 0; }
+      100% { left: -30px; width: 0;   opacity: 0; }
+    }
+
+    /* MAIN PLAYER (Luis Díaz — yellow) */
+    .player {
+      position: absolute;
+      bottom: 142px;
+      width: 38px; height: 96px;
+      animation: playerAnim 11s ease-in-out infinite;
+    }
+    .player svg { width: 100%; height: 100%; overflow: visible; }
+
+    @keyframes playerAnim {
+      0%   { left: -60px;  }
+      15%  { left: 24%;    }
+      /* step-over feint: player body shifts right briefly */
+      20%  { left: 25%;    }
+      25%  { left: 22%;    } /* feint left */
+      30%  { left: 42%;    } /* burst right */
+      40%  { left: 55%;    }
+      46%  { left: 57%;    }
+      /* approach goal, plant */
+      54%  { left: 66%;    }
+      /* hold for shot */
+      62%  { left: 68%;    }
+      /* celebration run */
+      70%  { left: 55%;    }
+      78%  { left: 40%;    }
+      /* walk back */
+      88%  { left: 5%;     }
+      89%  { left: -60px;  }
+      100% { left: -60px;  }
+    }
+
+    /* Player body bob while running */
+    .player-run {
+      animation: bodyRun 0.35s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    @keyframes bodyRun {
+      from { transform: rotate(-4deg) translateY(0); }
+      to   { transform: rotate(4deg)  translateY(-3px); }
+    }
+
+    /* DEFENDER (gray kit) */
+    .defender {
+      position: absolute;
+      bottom: 142px;
+      width: 34px; height: 90px;
+      animation: defAnim 11s ease-in-out infinite;
+      opacity: 0.6;
+    }
+    .defender svg { width: 100%; height: 100%; }
+    @keyframes defAnim {
+      0%   { left: 36%; opacity: 0.6; }
+      20%  { left: 36%; opacity: 0.8; }
+      30%  { left: 36%; opacity: 0.4; } /* beaten */
+      62%  { left: 36%; opacity: 0.3; }
+      63%  { left: 36%; opacity: 0; }
+      64%  { left: 36%; opacity: 0; }
+      88%  { left: 36%; opacity: 0; }
+      89%  { left: 36%; opacity: 0.6; }
+      100% { left: 36%; opacity: 0.6; }
+    }
+
+    /* ── SCENE FLASH (highlight reel transition) ── */
+    .flash {
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      animation: flashAnim 11s ease-in-out infinite;
+    }
+    @keyframes flashAnim {
+      0%   { opacity: 0; }
+      63%  { opacity: 0; }
+      63.5%{ opacity: 0.7; }
+      64%  { opacity: 0; }
+      88%  { opacity: 0; }
+      88.5%{ opacity: 0.3; }
+      89%  { opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    /* ── GOAL FLASH ── */
+    .goal-flash {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at 95% 50%,
+        rgba(252,209,22,0.35) 0%,
+        rgba(0,166,81,0.15) 40%,
+        transparent 70%);
+      opacity: 0;
+      animation: goalFlashAnim 11s ease-in-out infinite;
+    }
+    @keyframes goalFlashAnim {
+      0%   { opacity: 0; }
+      61%  { opacity: 0; }
+      62%  { opacity: 1; }
+      65%  { opacity: 1; }
+      70%  { opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    /* ── GOAL TEXT ── */
+    .goal-label {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%) scale(0.3);
+      font-size: 5rem;
+      font-weight: 900;
+      color: var(--col-y);
+      letter-spacing: 6px;
+      text-shadow: 0 0 40px rgba(252,209,22,0.9), 0 4px 0 rgba(0,0,0,0.5);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      animation: goalLabelAnim 11s ease-in-out infinite;
+    }
+    @keyframes goalLabelAnim {
+      0%   { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-5deg); }
+      61%  { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-5deg); }
+      63%  { opacity: 1; transform: translateX(-50%) scale(1.15) rotate(3deg); }
+      65%  { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+      70%  { opacity: 0; transform: translateX(-50%) scale(1.3) rotate(0deg); }
+      100% { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-5deg); }
+    }
+
+    /* ── BROADCAST CHYRON (name plate) ── */
+    .chyron {
+      position: absolute;
+      bottom: 32px;
+      left: 32px;
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      overflow: hidden;
+      border-radius: 4px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+      animation: chyronAnim 11s ease-in-out infinite;
+      opacity: 0;
+    }
+    @keyframes chyronAnim {
+      0%   { opacity: 0; transform: translateY(12px); }
+      5%   { opacity: 1; transform: translateY(0); }
+      85%  { opacity: 1; transform: translateY(0); }
+      90%  { opacity: 0; transform: translateY(12px); }
+      100% { opacity: 0; transform: translateY(12px); }
+    }
+    .chyron-flag {
+      background: var(--col-y);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 1.1rem;
+    }
+    .chyron-name {
+      background: rgba(0,0,0,0.85);
+      padding: 10px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+    }
+    .chyron-name span:first-child {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--col-y);
+    }
+    .chyron-name span:last-child {
+      font-size: 1rem;
+      font-weight: 800;
+      color: white;
+      letter-spacing: 1px;
+    }
+    .chyron-num {
+      background: var(--col-b);
+      padding: 10px 14px;
+      font-size: 1rem;
+      font-weight: 900;
+      color: white;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── SPEED LINES (during burst) ── */
+    .speed-lines {
+      position: absolute;
+      bottom: 130px;
+      height: 120px;
+      left: 10%;
+      right: 30%;
+      pointer-events: none;
+      opacity: 0;
+      animation: speedAnim 11s ease-in-out infinite;
+      overflow: hidden;
+    }
+    @keyframes speedAnim {
+      0%   { opacity: 0; }
+      28%  { opacity: 0; }
+      30%  { opacity: 0.5; }
+      34%  { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    .speed-lines::before,
+    .speed-lines::after {
+      content: '';
+      position: absolute;
+      top: 40%;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(252,209,22,0.6), transparent);
+    }
+    .speed-lines::after {
+      top: 60%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    }
+
+    /* ── CROWD SHADOW ── */
+    .crowd {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 45%;
+      background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* ── VIGNETTE ── */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+      pointer-events: none;
+    }
+
+    /* WC 2026 stage watermark */
+    .stage-brand {
+      position: absolute;
+      top: 28px;
+      left: 32px;
+      color: rgba(255,255,255,0.15);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ══ AUTH CARD ═══════════════════════════════════════ */
+    .auth-inner { width: 100%; max-width: 360px; }
+
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .auth-logo .ball { font-size: 54px; display: block; line-height: 1; margin-bottom: 12px; }
+    .auth-logo h1 { font-size: 1.5rem; font-weight: 800; color: white; }
+    .auth-logo p  { font-size: 13px; color: var(--muted); margin-top: 5px; }
+
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+      background: var(--card); border-radius: 10px;
+      padding: 4px; margin-bottom: 26px;
+    }
+    .tab {
+      padding: 10px; border-radius: 7px; border: none;
+      background: transparent; color: var(--muted);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all .2s;
+    }
+    .tab.on { background: var(--green); color: white; }
+
+    .fg { margin-bottom: 16px; }
+    .fg label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .6px;
+      margin-bottom: 7px;
+    }
+    .fg input {
+      width: 100%; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); padding: 12px 14px;
+      color: white; font-size: 15px; font-family: inherit; outline: none;
+      transition: border-color .2s;
+    }
+    .fg input:focus { border-color: var(--green); }
+
+    .btn-block {
+      width: 100%; padding: 14px; font-size: 15px; font-weight: 700;
+      border: none; border-radius: var(--r-sm); cursor: pointer;
+      font-family: inherit; transition: all .25s;
+      background: var(--green); color: white;
+      box-shadow: 0 8px 24px rgba(0,166,81,.35);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-block:hover { background: var(--green-l); transform: translateY(-1px); }
+
+    .err { color: var(--red); font-size: 13px; text-align: center; margin-top: 12px; min-height: 18px; }
+
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+
+    /* Colombia stripe top of auth panel */
+    .col-stripe {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--col-y) 33.3%, var(--col-b) 33.3% 66.6%, var(--col-r) 66.6%);
+    }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0;
+      color: var(--muted); font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: var(--border);
+    }
+
+    /* Pending message */
+    .msg-pending {
+      display: none;
+      text-align: center;
+      padding: 32px 16px;
+    }
+    .msg-pending .icon { font-size: 3rem; margin-bottom: 16px; }
+    .msg-pending h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .msg-pending p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ══ RESPONSIVE ══════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      .stage {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+      }
+      .auth-panel {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        min-height: 100vh;
+        background: rgba(15,27,48,0.88);
+        backdrop-filter: blur(16px);
+        border-left: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ══ LEFT: ANIMATED FIELD ══ -->
+  <div class="stage">
+    <div class="grass"></div>
+    <div class="lights"></div>
+    <div class="pitch-lines"></div>
+    <div class="center-circle"></div>
+    <div class="penalty-arc"></div>
+    <div class="goal"></div>
+    <div class="crowd"></div>
+
+    <!-- Speed lines during burst -->
+    <div class="speed-lines"></div>
+
+    <!-- Ball trail -->
+    <div class="ball-trail"></div>
+
+    <!-- Defender -->
+    <div class="defender">
+      <svg viewBox="0 0 34 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Head -->
+        <circle cx="17" cy="9" r="7" fill="#555" stroke="#444" stroke-width="1"/>
+        <!-- Body -->
+        <path d="M11 17 Q9 22 10 34 L24 34 Q25 22 23 17 Z" fill="#555"/>
+        <!-- Arms -->
+        <path d="M11 19 Q5 26 8 33" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+        <path d="M23 19 Q29 26 26 33" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+        <!-- Shorts -->
+        <rect x="10" y="34" width="6" height="11" rx="2" fill="#333"/>
+        <rect x="18" y="34" width="6" height="11" rx="2" fill="#333"/>
+        <!-- Legs -->
+        <path d="M13 45 Q11 62 12 72" stroke="#666" stroke-width="5" stroke-linecap="round"/>
+        <path d="M21 45 Q23 60 22 70" stroke="#666" stroke-width="5" stroke-linecap="round"/>
+        <!-- Boots -->
+        <ellipse cx="12" cy="73" rx="5" ry="3" fill="#222"/>
+        <ellipse cx="22" cy="71" rx="5" ry="3" fill="#222"/>
+      </svg>
+    </div>
+
+    <!-- Main player (Luis Díaz) -->
+    <div class="player">
+      <svg viewBox="0 0 38 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g class="player-run">
+          <!-- Head -->
+          <circle cx="19" cy="9" r="8" fill="#FCD116" stroke="#e0b800" stroke-width="1.5"/>
+          <!-- Hair -->
+          <path d="M11 7 Q13 0 19 1 Q25 0 27 7" fill="#1a0800" stroke="none"/>
+          <!-- Body / jersey Colombia yellow -->
+          <path d="M12 18 Q9 24 10 38 L28 38 Q29 24 26 18 Z" fill="#FCD116"/>
+          <!-- Jersey number 7 -->
+          <text x="19" y="32" text-anchor="middle" font-size="8" font-weight="900" fill="#003087">7</text>
+          <!-- Left arm -->
+          <path d="M12 20 Q4 28 7 36" stroke="#FCD116" stroke-width="5" stroke-linecap="round"/>
+          <!-- Right arm (raised) -->
+          <path d="M26 20 Q34 26 31 34" stroke="#FCD116" stroke-width="5" stroke-linecap="round"/>
+          <!-- Shorts -->
+          <rect x="11" y="38" width="7" height="13" rx="2" fill="#003087"/>
+          <rect x="20" y="38" width="7" height="13" rx="2" fill="#003087"/>
+          <!-- Left leg (planted) -->
+          <path d="M14 51 Q11 68 13 78" stroke="#FCD116" stroke-width="6" stroke-linecap="round"/>
+          <!-- Right leg (kicking) -->
+          <path d="M23 51 Q28 64 30 72" stroke="#FCD116" stroke-width="6" stroke-linecap="round"/>
+          <!-- Left boot -->
+          <ellipse cx="13" cy="79" rx="6" ry="3.5" fill="#CE1126"/>
+          <!-- Right boot -->
+          <ellipse cx="30" cy="73" rx="6" ry="3.5" fill="#CE1126"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Ball -->
+    <div class="ball"></div>
+
+    <!-- Goal flash -->
+    <div class="goal-flash"></div>
+
+    <!-- GOOOOL! text -->
+    <div class="goal-label">⚽ GOOOL!</div>
+
+    <!-- Highlight reel flash -->
+    <div class="flash"></div>
+
+    <!-- Broadcast chyron -->
+    <div class="chyron">
+      <div class="chyron-flag">🇨🇴</div>
+      <div class="chyron-name">
+        <span>Colombia</span>
+        <span>LUIS DÍAZ</span>
+      </div>
+      <div class="chyron-num">#7</div>
+    </div>
+
+    <!-- Vignette overlay -->
+    <div class="vignette"></div>
+
+    <!-- Stage watermark -->
+    <div class="stage-brand">⚽ World Cup 2026</div>
+  </div>
+
+  <!-- ══ RIGHT: AUTH PANEL ══ -->
+  <div class="auth-panel">
+    <div class="col-stripe"></div>
+    <div class="auth-inner">
+
+      <div class="auth-logo">
+        <span class="ball">⚽</span>
+        <h1>World Cup 2026</h1>
+        <p>Family Picks · USA · Canada · Mexico</p>
+      </div>
+
+      <!-- Login / Register tabs -->
+      <div class="tabs">
+        <button class="tab on" id="tab-login" onclick="showTab('login')">Sign In</button>
+        <button class="tab"    id="tab-reg"   onclick="showTab('reg')">Register</button>
+      </div>
+
+      <!-- Sign In form -->
+      <div class="form-section active" id="f-login">
+        <div class="fg">
+          <label>Email</label>
+          <input type="email" placeholder="you@email.com" />
+        </div>
+        <div class="fg">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+        <button class="btn-block">Sign In ⚽</button>
+        <div class="err"></div>
+      </div>
+
+      <!-- Register form -->
+      <div class="form-section" id="f-reg">
+        <div class="fg">
+          <label>Your Name</label>
+          <input type="text" placeholder="e.g. Diego Costa" />
+        </div>
+        <div class="fg">
+          <label>Email</label>
+          <input type="email" placeholder="you@email.com" />
+        </div>
+        <div class="fg">
+          <label>Password</label>
+          <input type="password" placeholder="Min 6 characters" />
+        </div>
+        <button class="btn-block">Create Account 🚀</button>
+        <div class="err"></div>
+        <div class="divider">Registration requires admin approval</div>
+      </div>
+
+      <!-- Pending approval (shown after register) -->
+      <div class="msg-pending" id="msg-pending">
+        <div class="icon">⏳</div>
+        <h2>You're on the list!</h2>
+        <p>Your account is pending approval. You'll be able to sign in once an admin approves you.</p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showTab(t) {
+    document.getElementById('f-login').classList.toggle('active', t === 'login');
+    document.getElementById('f-reg').classList.toggle('active',   t === 'reg');
+    document.getElementById('tab-login').classList.toggle('on',   t === 'login');
+    document.getElementById('tab-reg').classList.toggle('on',     t === 'reg');
+  }
+</script>
+</body>
+</html>
